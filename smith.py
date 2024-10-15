@@ -118,13 +118,9 @@ def process_data(method, pid_tuning):
         f"Tempo de subida = {rise_time_closed:.2f} s,\n"
         f"Tempo de acomodação = {settle_time_closed:.2f} s,\n"
         f"Pico = {peak_closed:.4f}\n\n"
-        "\nDiferenças observadas:\n"
-        "- A malha aberta tem um tempo de subida e de acomodação maior, além de um erro estacionário significativo.\n"
+
     )
-    if pid_label == 'Ziegler-Nichols':
-        results_str += f"- A malha fechada ({pid_label}) apresentou um tempo de subida mais rápido, mas com possível overshoot.\n"
-    else:
-        results_str += f"- A malha fechada ({pid_label}) mostrou um desempenho mais equilibrado, com menor sobrevalor e bom tempo de acomodação.\n"
+
 
     print(results_str)  # Exibir no terminal
 
@@ -230,14 +226,16 @@ def compare_pids(method):
     rise_time_chr, settle_time_chr, steady_state_error_chr, peak_chr = calc_performance(t_closed_chr, y_closed_chr, target_value)
 
     # Imprimir os resultados no terminal
-    print(f"\nResultados para o método {method}:")
-    print(f"Ziegler-Nichols: Tempo de subida = {rise_time_zn:.2f} s, Tempo de acomodação = {settle_time_zn:.2f} s, Pico = {peak_zn:.4f}")
-    print(f"CHR: Tempo de subida = {rise_time_chr:.2f} s, Tempo de acomodação = {settle_time_chr:.2f} s, Pico = {peak_chr:.4f}\n")
+    print(f"\nComparação dos métodos de sintonia:")
+    print(f"Ziegler-Nichols (Malha Aberta): \n")
+    print(f"Tempo de subida = {rise_time_zn:.2f} s,\n")
+    print(f" Tempo de acomodação = {settle_time_zn:.2f} s,\n")
+    print(f"Pico = {peak_zn:.4f}\n\n")
+    print(f"CHR (Malha Fechada): \n")
+    print(f"Tempo de Subida = {rise_time_chr:.2f} s,\n")
+    print(f"Tempo de Acomodação = {settle_time_chr:.2f} s,\n")
+    print(f"Pico = {peak_chr:.4f}\n")
 
-    # Explicação sobre as diferenças com valores comparativos
-    print("Explicação sobre as diferenças:")
-    print(f"- Ziegler-Nichols oferece uma resposta mais rápida com tempo de subida menor ({rise_time_zn:.2f} s), mas com overshoot maior (pico = {peak_zn:.4f}).")
-    print(f"- CHR busca uma resposta mais equilibrada com tempo de acomodação menor ({settle_time_chr:.2f} s) e menor overshoot (pico = {peak_chr:.4f}).\n")
 
     # Plotar os gráficos comparativos
     plt.figure()
@@ -296,3 +294,4 @@ def create_gui():
 
 # Executar a interface gráfica
 create_gui()
+
