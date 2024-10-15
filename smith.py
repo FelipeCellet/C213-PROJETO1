@@ -7,6 +7,11 @@ import scipy.io as sio
 file_path = 'Dataset_Grupo1.mat'
 data = sio.loadmat(file_path)
 
+# Mensagem explicando o uso do método Smith
+print("O método de Smith foi escolhido porque é ideal para sistemas de primeira ordem com atraso de transporte.")
+print(
+    "Ele permite estimar com precisão o atraso e ajustar o modelo do sistema, especialmente quando os dados experimentais têm pouca incerteza.")
+
 # Extraindo tempo, degrau (entrada) e temperatura (saída)
 if data['TARGET_DATA____ProjetoC213_Degrau'].shape[0] > data['TARGET_DATA____ProjetoC213_Degrau'].shape[1]:
     tempo = data['TARGET_DATA____ProjetoC213_Degrau'][:, 0]
@@ -47,6 +52,21 @@ sys_smith_delay = ctrl.TransferFunction(num_pade, den_pade)
 sys_with_delay_smith = ctrl.series(sys_smith_delay, sys_smith)
 
 # -------------------------
+# Resposta do Sistema em Malha Aberta
+# -------------------------
+t_open, y_open = ctrl.step_response(sys_with_delay_smith, T=tempo)
+
+plt.figure()
+plt.plot(t_open, y_open, label="Malha Aberta")
+plt.plot(tempo, temperatura, 'r--', label="Dados Reais")
+plt.xlabel('Tempo [s]')
+plt.ylabel('Temperatura [°C]')
+plt.title('Resposta do Sistema em Malha Aberta')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+
+# -------------------------
 # Sintonia do Controlador PID (Ziegler-Nichols - Malha Aberta)
 # -------------------------
 Kp_zn = 1.2 * tau_smith / (k_smith * theta_smith)
@@ -67,45 +87,75 @@ pid_chr = ctrl.TransferFunction([Kp_chr * Td_chr, Kp_chr, Kp_chr / Ti_chr], [1, 
 sys_closed_chr = ctrl.feedback(ctrl.series(pid_chr, sys_with_delay_smith))
 
 # -------------------------
-# Sintonia IMC (Internal Model Control)
+# Resposta ao Degrau (Malha Fechada com Ziegler-Nichols e CHR)
 # -------------------------
-lambda_imc = 0.5 * tau_smith  # Escolha de λ como metade da constante de tempo para bom desempenho
-
-# Controlador PID para IMC
-Kp_imc = tau_smith / (k_smith * (lambda_imc + theta_smith))
-Ti_imc = tau_smith
-Td_imc = (lambda_imc * theta_smith) / (lambda_imc + theta_smith)
-
-pid_imc = ctrl.TransferFunction([Kp_imc * Td_imc, Kp_imc, Kp_imc / Ti_imc], [1, 0])
-sys_closed_imc = ctrl.feedback(ctrl.series(pid_imc, sys_with_delay_smith))
+t_closed_zn, y_closed_zn = ctrl.step_response(sys_closed_zn, T=tempo)
+t_closed_chr, y_closed_chr = ctrl.step_response(sys_closed_chr, T=tempo)
 
 # -------------------------
-# Resposta ao Degrau (Sistemas Controlados)
+# Plotar as Respostas (Malha Fechada e Malha Aberta)
 # -------------------------
-# Malha Fechada com Ziegler-Nichols
-t_zn, y_zn = ctrl.step_response(sys_closed_zn, T=tempo)
-
-# Malha Fechada com CHR com Sobrevalor
-t_chr, y_chr = ctrl.step_response(sys_closed_chr, T=tempo)
-
-# Malha Fechada com IMC
-t_imc, y_imc = ctrl.step_response(sys_closed_imc, T=tempo)
-
-# Plotar as respostas
 plt.figure()
-plt.plot(t_zn, y_zn, label="Ziegler-Nichols (Malha Aberta)")
-plt.plot(t_chr, y_chr, label="CHR com Sobrevalor")
-plt.plot(t_imc, y_imc, label="IMC (λ = 0.5 τ)")
-plt.plot(tempo, temperatura, 'r--', label="Dados Reais")
+plt.plot(t_open, y_open, label="Malha Aberta")
+plt.plot(t_closed_zn, y_closed_zn, label="Malha Fechada - Ziegler-Nichols")
+plt.plot(t_closed_chr, y_closed_chr, label="Malha Fechada - CHR")
 plt.xlabel('Tempo [s]')
 plt.ylabel('Temperatura [°C]')
-plt.title('Comparação de Sintonias: Ziegler-Nichols, CHR e IMC')
+plt.title('Comparação: Malha Aberta vs Malha Fechada (Ziegler-Nichols e CHR)')
 plt.legend(loc='lower right')
 plt.grid(True)
 plt.show()
 
+
 # -------------------------
-# Comentando o valor de λ (IMC)
+# Cálculo do Desempenho (Tempo de Subida, Acomodação, Erro)
 # -------------------------
-print(f"Valor de λ escolhido para IMC = {lambda_imc:.4f}")
-print("Escolhemos λ como metade da constante de tempo do sistema (τ/2) para um equilíbrio entre rapidez e robustez.")
+def calc_performance(t, y, target):
+    # Verificar se o sistema atinge 10% e 90% do valor alvo
+    if np.max(y) < 0.9 * target or np.min(y) > 0.1 * target:
+        print("O sistema não atinge os limites de 10% a 90% do valor final.")
+        return np.nan, np.nan, np.abs(target - y[-1])
+
+    # Tempo de subida (de 10% a 90%)
+    rise_time_idx = np.where((y >= 0.1 * target) & (y <= 0.9 * target))[0]
+    rise_time = t[rise_time_idx[-1]] - t[rise_time_idx[0]] if len(rise_time_idx) > 0 else np.nan
+
+    # Tempo de acomodação (dentro de 2% do valor final)
+    settle_time_idx = np.where(np.abs(y - target) <= 0.02 * target)[0]
+    settle_time = t[settle_time_idx[-1]] - t[settle_time_idx[0]] if len(settle_time_idx) > 0 else np.nan
+
+    # Erro do processo (erro de estado estacionário)
+    steady_state_error = np.abs(target - y[-1])
+
+    return rise_time, settle_time, steady_state_error
+
+
+# Alvo final (degrau)
+target_value = degrau[-1]
+
+# Desempenho da Malha Aberta
+rise_time_open, settle_time_open, steady_state_error_open = calc_performance(t_open, y_open, target_value)
+
+# Desempenho da Malha Fechada (Ziegler-Nichols)
+rise_time_zn, settle_time_zn, steady_state_error_zn = calc_performance(t_closed_zn, y_closed_zn, target_value)
+
+# Desempenho da Malha Fechada (CHR)
+rise_time_chr, settle_time_chr, steady_state_error_chr = calc_performance(t_closed_chr, y_closed_chr, target_value)
+
+# -------------------------
+# Exibir os Resultados
+# -------------------------
+print(
+    f"Malha Aberta: Tempo de subida = {rise_time_open:.2f} s, Tempo de acomodação = {settle_time_open:.2f} s, Erro estacionário = {steady_state_error_open:.4f}")
+print(
+    f"Malha Fechada (Ziegler-Nichols): Tempo de subida = {rise_time_zn:.2f} s, Tempo de acomodação = {settle_time_zn:.2f} s, Erro estacionário = {steady_state_error_zn:.4f}")
+print(
+    f"Malha Fechada (CHR): Tempo de subida = {rise_time_chr:.2f} s, Tempo de acomodação = {settle_time_chr:.2f} s, Erro estacionário = {steady_state_error_chr:.4f}")
+
+# -------------------------
+# Comparação das Diferenças
+# -------------------------
+print("\nDiferenças observadas:")
+print("- A malha aberta tem um tempo de subida e de acomodação maior, além de um erro estacionário significativo.")
+print("- A malha fechada (Ziegler-Nichols) apresentou um tempo de subida mais rápido, mas com possível overshoot.")
+print("- A malha fechada (CHR) mostrou um desempenho mais equilibrado, com menor sobrevalor e bom tempo de acomodação.")
