@@ -1,63 +1,34 @@
 # C213-PROJETO1
  Primerio projeto C213
 
+ Explicação do Método Smith e Escolhas de Controle PID
+1. Introdução
+O método de Smith é amplamente utilizado para modelagem de sistemas com atraso de transporte. Nesse contexto, ele é eficaz para sistemas de primeira ordem com um atraso considerável, proporcionando uma modelagem precisa quando os dados experimentais possuem baixa incerteza. No projeto de controle utilizado, o método de Smith foi aplicado para estimar a função de transferência do sistema e ajustar o controlador PID de forma a obter um desempenho mais adequado.
 
-## Método escolhido: Smith
+2. Motivo da Escolha do Método Smith
+O método de Smith foi escolhido por ser ideal para sistemas que apresentam as seguintes características:
 
-O método de **Smith** é preferido em situações onde o sistema apresenta uma resposta bem definida e o atraso de transporte pode ser estimado com precisão. Ele é particularmente adequado para sistemas de primeira ordem, especialmente quando os dados experimentais apresentam pouca incerteza.
+Atraso de transporte significativo: Quando o atraso no sistema não pode ser ignorado, o método de Smith é uma escolha natural, pois lida diretamente com esse fenômeno.
+Simplicidade e precisão: Ele permite calcular o ganho estático (k), a constante de tempo (τ) e o atraso de transporte (θ) com precisão, o que é crucial para a sintonização de controladores PID.
+Aproximação de Padé: Utilizando a aproximação de Padé, o método de Smith representa bem o atraso de transporte em sistemas de controle, modelando adequadamente as dinâmicas de sistemas com atraso.
+Essas razões tornam o método de Smith eficaz para sistemas de primeira ordem com atraso de transporte, como o utilizado no projeto.
 
-### Determinação dos Parâmetros
-Através do método de Smith, os valores de **ganho (k)**, **constante de tempo (τ)** e **atraso de transporte (θ)** são determinados. Esses valores fornecem uma boa estimativa da função de transferência do modelo.
+3. Controladores PID Utilizados
+Para garantir que o sistema tenha um bom desempenho tanto em malha aberta quanto em malha fechada, foram aplicados dois métodos de sintonização de controladores PID:
 
-### Justificativa da Escolha
-- **Simplicidade**: O método de Smith é direto e fornece uma boa aproximação para sistemas de primeira ordem.
-- **Precisão**: Ele é robusto para estimativas de \(k\), \(\tau\) e \(\theta\), especialmente quando o atraso de transporte é bem observado.
-- **Adaptabilidade**: A combinação com a aproximação de Padé lida bem com o atraso de transporte.
+Ziegler-Nichols (Malha Aberta): Um método amplamente utilizado para sistemas com atraso e que foca na obtenção de respostas rápidas, mas pode gerar sobressinal (overshoot). Esse método foi escolhido por sua simplicidade e eficiência em muitos casos industriais.
+CHR com Sobrevalor: Esse método é uma alternativa ao Ziegler-Nichols, com o objetivo de reduzir o overshoot e proporcionar uma resposta mais suave. Ele oferece um compromisso entre o tempo de resposta e a estabilidade do sistema.
+Esses dois métodos de sintonização foram aplicados e comparados, para observar o comportamento do sistema controlado em termos de tempo de subida, tempo de acomodação e erro estacionário.
 
-## Análise do Sistema em Malha Aberta e Fechada
+4. Resultados e Desempenho do Sistema
+As simulações mostraram as seguintes características importantes:
 
-### Definições Importantes
-- **Tempo de subida**: Tempo necessário para o sistema ir de 10% a 90% do valor final.
-- **Tempo de acomodação**: Tempo necessário para o sistema estabilizar dentro de uma faixa de ±2% do valor final.
-- **Erro do processo**: Diferença entre o valor final esperado e o valor final atingido em regime permanente.
+Malha Aberta: O sistema, sem controle, apresenta um tempo de subida maior, assim como um tempo de acomodação mais longo. O erro estacionário é significativo, o que indica a necessidade de um controlador.
+Malha Fechada (Ziegler-Nichols): O sistema responde mais rapidamente, mas apresenta overshoot (sobressinal). O tempo de acomodação é menor, mas o overshoot pode ser indesejável em alguns cenários.
+Malha Fechada (CHR): Apresenta uma resposta mais equilibrada, com menor overshoot e bom tempo de acomodação. Essa é uma boa opção quando se busca um compromisso entre velocidade e estabilidade.
+5. Considerações Finais
+Ao escolher um método de controle para sistemas com atraso, é essencial levar em consideração as características do sistema e os objetivos do controle. No caso do método de Smith, ele se mostrou eficiente por lidar diretamente com o atraso de transporte, o que é uma característica marcante do sistema em análise.
 
-### Comportamento do Sistema
-- **Malha Aberta**:
-  - **Tempo de subida** maior, pois não há controle ativo.
-  - **Tempo de acomodação** pode ser inexistente, com possíveis oscilações.
-  - **Erro estacionário** tende a ser maior, sem feedback para correção.
-  
-- **Malha Fechada**:
-  - **Tempo de subida** menor, graças ao ajuste do controlador PID.
-  - **Tempo de acomodação** reduzido, já que o controlador estabiliza o sistema mais rápido.
-  - **Erro estacionário** reduzido ou nulo, devido ao feedback ativo.
+Além disso, a escolha entre Ziegler-Nichols e CHR com sobrevalor para a sintonização do PID depende das exigências de desempenho. O Ziegler-Nichols pode ser preferível em sistemas que podem tolerar algum overshoot em troca de tempos de resposta mais rápidos, enquanto o CHR com sobrevalor proporciona uma resposta mais equilibrada, com menos overshoot e maior estabilidade.
 
-## Sintonização do Controlador PID
-
-A sintonização foi feita usando os métodos de **Ziegler-Nichols (Malha Aberta)** e **CHR com sobrevalor**, além da **Sintonia IMC** para controle baseado no modelo interno.
-
-### Métodos Utilizados
-
-1. **Ziegler-Nichols (Malha Aberta)**:
-   - Método tradicional que ajusta \(K_p\), \(T_i\), e \(T_d\) para obter uma resposta relativamente rápida, porém com maior overshoot.
-   - Fórmulas:
-     - \(K_p = 1.2 \cdot \frac{\tau}{k \cdot \theta}\)
-     - \(T_i = 2 \cdot \theta\)
-     - \(T_d = 0.5 \cdot \theta\)
-
-2. **CHR com Sobrevalor**:
-   - Ajusta os parâmetros PID para reduzir o overshoot e manter um bom tempo de acomodação.
-   - Fórmulas:
-     - \(K_p = 0.95 \cdot \frac{\tau}{k \cdot \theta}\)
-     - \(T_i = 1.357 \cdot \tau\)
-     - \(T_d = 0.473 \cdot \theta\)
-
-3. **Sintonia IMC (Internal Model Control)**:
-   - Ajusta o controlador com base no parâmetro \(\lambda\), que controla o equilíbrio entre rapidez e robustez.
-   - Valor escolhido: \(\lambda = 0.5 \cdot \tau\), para um bom compromisso entre rapidez e robustez.
-
-### Justificativa para o valor de \(\lambda\):
-- Um valor de \(\lambda = 0.5 \cdot \tau\) foi escolhido para garantir que o sistema mantenha um equilíbrio adequado entre rapidez de resposta e robustez. Valores muito pequenos de \(\lambda\) poderiam causar uma resposta rápida, mas sensível a ruídos, enquanto valores maiores tornariam o sistema mais robusto, porém mais lento.
-
-## Resultados Esperados
-As respostas dos sistemas controlados por **Ziegler-Nichols**, **CHR com sobrevalor** e **IMC** serão plotadas para comparação. O valor de \(\lambda\) escolhido para a sintonia IMC será exibido com a justificativa de sua escolha.
+Essas escolhas proporcionam flexibilidade no ajuste do sistema, permitindo que ele seja ajustado para diferentes aplicações e condições operacionais.
