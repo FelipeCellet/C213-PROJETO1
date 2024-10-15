@@ -296,4 +296,3 @@ def create_gui():
 
 # Executar a interface gráfica
 create_gui()
-
