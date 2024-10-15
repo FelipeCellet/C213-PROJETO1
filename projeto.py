@@ -9,9 +9,9 @@ data = sio.loadmat(file_path)
 print(data.keys())
 
 # Extraindo entrada e saída
-entrada = data['TARGET_DATA____ProjetoC213_Degrau'][:,1]  
-saida = data['TARGET_DATA____ProjetoC213_PotenciaMotor'][:,1] 
-tempo = data['TARGET_DATA____ProjetoC213_Degrau'][:,0]  
+entrada = data['TARGET_DATA____ProjetoC213_Degrau'][:,1]
+saida = data['TARGET_DATA____ProjetoC213_PotenciaMotor'][:,1]
+tempo = data['TARGET_DATA____ProjetoC213_Degrau'][:,0]
 
 # Visualizando os dados em um único gráfico
 plt.figure(figsize=(12, 6))
